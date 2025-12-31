@@ -222,7 +222,7 @@ async def main():
         request_kwargs = {}
         if PROXY_URL:
             logger.info(f"🌐 使用代理: {PROXY_URL}")
-            request_kwargs["proxy_url"] = PROXY_URL
+            request_kwargs["proxy"] = PROXY_URL
         
         req = HTTPXRequest(connection_pool_size=100, **request_kwargs)
 
