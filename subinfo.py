@@ -219,7 +219,12 @@ async def main():
             logger.warning(f"⚠️ 加载远程映射失败: {e}")
 
         # 4. 配置 Telegram Bot (支持代理)
-        request_kwargs = {}
+        request_kwargs = {
+            "connect_timeout": 10.0,
+            "read_timeout": 20.0,
+            "write_timeout": 20.0,
+            "pool_timeout": 10.0
+        }
         if PROXY_URL:
             logger.info(f"🌐 使用代理: {PROXY_URL}")
             request_kwargs["proxy"] = PROXY_URL
