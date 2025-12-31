@@ -8,7 +8,7 @@
 
 ### 📋 Overview
 
-A Telegram bot that queries subscription information from V2Ray/Clash/Surge subscription links, including traffic usage, expiration dates, and node counts. Supports batch processing with concurrent requests.
+A Telegram bot that queries subscription information from V2Ray/Clash/Surge subscription links, including traffic usage, expiration dates, and node counts. Supports batch processing with concurrent requests and proxy configuration.
 
 ### ✨ Features
 
@@ -18,6 +18,8 @@ A Telegram bot that queries subscription information from V2Ray/Clash/Surge subs
 - 🌐 **Node Detection**: Automatically detects node count and type (Clash/V2Ray/SS)
 - 📁 **Export Options**: View results in chat or export as TXT file
 - 🏷️ **Custom Naming**: Supports custom airport name mappings via remote config
+- 🔒 **Secure Configuration**: Uses `.env` for sensitive data
+- 🛡️ **Proxy Support**: Configurable proxy for Telegram API connections
 
 ### 🚀 Quick Start
 
@@ -36,12 +38,19 @@ cd telegram-subinfo-bot
 
 2. Install dependencies:
 ```bash
-pip install python-telegram-bot httpx pyyaml
+pip install -r requirements.txt
 ```
 
 3. Configure the bot:
-   - Open `subinfo.py`
-   - Replace `TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"` with your actual bot token
+   - Copy `.env.example` to `.env`:
+     ```bash
+     cp .env.example .env
+     ```
+   - Edit `.env` file and fill in your variables:
+     ```ini
+     TELEGRAM_BOT_TOKEN=your_bot_token_here
+     TELEGRAM_PROXY_URL=http://127.0.0.1:7890  # Optional: For local proxy
+     ```
 
 4. Run the bot:
 ```bash
@@ -107,20 +116,6 @@ keyword1=Airport Name 1
 keyword2=Airport Name 2
 ```
 
-#### Concurrency Settings
-
-Adjust concurrent request limit:
-```python
-MAX_CONCURRENT_REQUESTS = 5  # Default: 5
-```
-
-### 🛠️ Technical Details
-
-- **Supported Formats**: Clash YAML, V2Ray/Shadowsocks Base64
-- **Timeout**: 15 seconds per request
-- **User-Agent**: `FlClash/v0.8.76 clash-verge`
-- **Message Limit**: 4000 characters (auto-truncates)
-
 ### 📝 License
 
 MIT License
@@ -135,7 +130,7 @@ Pull requests are welcome! For major changes, please open an issue first.
 
 ### 📋 项目简介
 
-一个 Telegram 机器人,用于查询 V2Ray/Clash/Surge 订阅链接的流量使用情况、到期时间和节点数量。支持批量并发查询。
+一个 Telegram 机器人,用于查询 V2Ray/Clash/Surge 订阅链接的流量使用情况、到期时间和节点数量。支持批量并发查询，支持配置代理。
 
 ### ✨ 功能特点
 
@@ -145,6 +140,8 @@ Pull requests are welcome! For major changes, please open an issue first.
 - 🌐 **节点检测**: 自动检测节点数量和类型 (Clash/V2Ray/SS)
 - 📁 **导出选项**: 在聊天中查看或导出为 TXT 文件
 - 🏷️ **自定义命名**: 支持通过远程配置自定义机场名称映射
+- 🔒 **安全配置**: 使用 `.env` 文件管理敏感信息
+- 🛡️ **代理支持**: 可配置 Telegram API 连接代理
 
 ### 🚀 快速开始
 
@@ -163,12 +160,19 @@ cd telegram-subinfo-bot
 
 2. 安装依赖:
 ```bash
-pip install python-telegram-bot httpx pyyaml
+pip install -r requirements.txt
 ```
 
 3. 配置机器人:
-   - 打开 `subinfo.py`
-   - 将 `TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"` 替换为你的实际 Bot Token
+   - 复制 `.env.example` 为 `.env`:
+     ```bash
+     cp .env.example .env
+     ```
+   - 编辑 `.env` 文件并填入配置:
+     ```ini
+     TELEGRAM_BOT_TOKEN=你的_bot_token
+     TELEGRAM_PROXY_URL=http://127.0.0.1:7890  # 可选: 本地代理地址
+     ```
 
 4. 运行机器人:
 ```bash
@@ -233,20 +237,6 @@ REMOTE_MAPPINGS_URL = "https://raw.githubusercontent.com/Hyy800/Quantumult-X/ref
 关键词1=机场名称1
 关键词2=机场名称2
 ```
-
-#### 并发设置
-
-调整并发请求数量限制:
-```python
-MAX_CONCURRENT_REQUESTS = 5  # 默认: 5
-```
-
-### 🛠️ 技术细节
-
-- **支持格式**: Clash YAML、V2Ray/Shadowsocks Base64
-- **超时时间**: 每个请求 15 秒
-- **User-Agent**: `FlClash/v0.8.76 clash-verge`
-- **消息限制**: 4000 字符 (自动截断)
 
 ### 📝 开源协议
 
