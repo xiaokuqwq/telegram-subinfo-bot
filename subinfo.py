@@ -4,6 +4,8 @@ import re
 import time
 import html
 import logging
+import os
+import sys
 from datetime import datetime
 from io import BytesIO
 
@@ -11,13 +13,19 @@ import aiohttp
 import yaml
 from telegram import Update, constants
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
+from telegram.request import HTTPXRequest
+from dotenv import load_dotenv
+
+# --- 加载环境变量 ---
+load_dotenv()
 
 # --- 日志配置 ---
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # --- 静态配置 ---
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-PROXY_URL = os.getenv("TELEGRAM_PROXY_URL")
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+PROXY_URL = os.getenv("TELEGRAM_PROXY_URL", "").strip()
 REMOTE_MAPPINGS_URL = "https://raw.githubusercontent.com/Hyy800/Quantumult-X/refs/heads/Nana/ymys.txt"
 REMOTE_CONFIG_MAPPINGS = {}
 
@@ -84,8 +92,10 @@ async def fetch_node_info(url: str):
                 decoded = base64.b64decode(data).decode('utf-8')
                 lines = [l for l in decoded.splitlines() if '://' in l]
                 if lines: return {"count": len(lines), "detail": f"{len(lines)}个通用节点"}
-            except: pass
-    except: pass
+            except Exception as e:
+                logger.debug(f"Failed to parse node info for {url}: {e}")
+    except Exception as e:
+        logger.debug(f"Failed to fetch node info for {url}: {e}")
     return None
 
 async def process_sub(url: str):
@@ -115,6 +125,7 @@ async def process_sub(url: str):
                     "node": node, "up": u, "down": d
                 }
         except Exception as err:
+            logger.error(f"Error processing {url}: {err}")
             return {"success": False, "url": url, "error": "连接超时/异常"}
 
 # --- 消息处理器 ---
@@ -180,11 +191,22 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def main():
     global shared_session
-    # 初始化 aiohttp 连接池
+
+    # 1. Token 校验
+    if not TOKEN:
+        logger.error("❌ 未设置 Bot Token！请在 .env 文件中设置 TELEGRAM_BOT_TOKEN。")
+        sys.exit(1)
+    
+    # 简单正则校验 (数字:字符)
+    if not re.match(r'^\d+:[A-Za-z0-9_-]+$', TOKEN):
+        logger.error(f"❌ Bot Token 格式错误: '{TOKEN}'。请检查 .env 文件。")
+        sys.exit(1)
+
+    # 2. 初始化 aiohttp 连接池
     connector = aiohttp.TCPConnector(limit=100, ttl_dns_cache=300)
     shared_session = aiohttp.ClientSession(connector=connector)
 
-    # 加载映射
+    # 3. 加载映射
     try:
         async with shared_session.get(REMOTE_MAPPINGS_URL) as r:
             text = await r.text()
@@ -192,20 +214,33 @@ async def main():
                 if '=' in line and not line.startswith('#'):
                     k, v = line.split('=', 1)
                     REMOTE_CONFIG_MAPPINGS[k.strip()] = v.strip()
-    except: pass
+    except Exception as e:
+        logger.warning(f"⚠️ 加载远程映射失败: {e}")
 
-    app = ApplicationBuilder().token(TOKEN).concurrent_updates(True).build()
+    # 4. 配置 Telegram Bot (支持代理)
+    request_kwargs = {}
+    if PROXY_URL:
+        logger.info(f"🌐 使用代理: {PROXY_URL}")
+        request_kwargs["proxy_url"] = PROXY_URL
+    
+    req = HTTPXRequest(connection_pool_size=100, **request_kwargs)
+
+    app = ApplicationBuilder().token(TOKEN).request(req).concurrent_updates(True).build()
     app.add_handler(MessageHandler(filters.TEXT | filters.Document.Category("text/plain"), handle_request))
     
+    print(f">>> 🤖 Bot 启动中... (Token: {TOKEN[:5]}...)")
     print(">>> aiohttp 极速并发版启动...")
     
-    async with app:
-        await app.initialize()
-        await app.start()
-        await app.updater.start_polling()
-        await asyncio.Event().wait()
-    
-    await shared_session.close()
+    try:
+        async with app:
+            await app.initialize()
+            await app.start()
+            await app.updater.start_polling()
+            await asyncio.Event().wait()
+    finally:
+        if shared_session:
+            await shared_session.close()
+            logger.info("🛑 aiohttp 连接池已关闭")
 
 if __name__ == "__main__":
     try:
