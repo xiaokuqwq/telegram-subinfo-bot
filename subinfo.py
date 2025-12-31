@@ -16,7 +16,8 @@ from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTyp
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 # --- 静态配置 ---
-TOKEN = "你的_TELEGRAM_BOT_TOKEN"
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+PROXY_URL = os.getenv("TELEGRAM_PROXY_URL")
 REMOTE_MAPPINGS_URL = "https://raw.githubusercontent.com/Hyy800/Quantumult-X/refs/heads/Nana/ymys.txt"
 REMOTE_CONFIG_MAPPINGS = {}
 
