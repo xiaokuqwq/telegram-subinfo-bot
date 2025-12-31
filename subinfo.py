@@ -206,37 +206,41 @@ async def main():
     connector = aiohttp.TCPConnector(limit=100, ttl_dns_cache=300)
     shared_session = aiohttp.ClientSession(connector=connector)
 
-    # 3. 加载映射
     try:
-        async with shared_session.get(REMOTE_MAPPINGS_URL) as r:
-            text = await r.text()
-            for line in text.splitlines():
-                if '=' in line and not line.startswith('#'):
-                    k, v = line.split('=', 1)
-                    REMOTE_CONFIG_MAPPINGS[k.strip()] = v.strip()
-    except Exception as e:
-        logger.warning(f"⚠️ 加载远程映射失败: {e}")
+        # 3. 加载映射
+        try:
+            async with shared_session.get(REMOTE_MAPPINGS_URL) as r:
+                text = await r.text()
+                for line in text.splitlines():
+                    if '=' in line and not line.startswith('#'):
+                        k, v = line.split('=', 1)
+                        REMOTE_CONFIG_MAPPINGS[k.strip()] = v.strip()
+        except Exception as e:
+            logger.warning(f"⚠️ 加载远程映射失败: {e}")
 
-    # 4. 配置 Telegram Bot (支持代理)
-    request_kwargs = {}
-    if PROXY_URL:
-        logger.info(f"🌐 使用代理: {PROXY_URL}")
-        request_kwargs["proxy_url"] = PROXY_URL
-    
-    req = HTTPXRequest(connection_pool_size=100, **request_kwargs)
+        # 4. 配置 Telegram Bot (支持代理)
+        request_kwargs = {}
+        if PROXY_URL:
+            logger.info(f"🌐 使用代理: {PROXY_URL}")
+            request_kwargs["proxy_url"] = PROXY_URL
+        
+        req = HTTPXRequest(connection_pool_size=100, **request_kwargs)
 
-    app = ApplicationBuilder().token(TOKEN).request(req).concurrent_updates(True).build()
-    app.add_handler(MessageHandler(filters.TEXT | filters.Document.Category("text/plain"), handle_request))
-    
-    print(f">>> 🤖 Bot 启动中... (Token: {TOKEN[:5]}...)")
-    print(">>> aiohttp 极速并发版启动...")
-    
-    try:
+        app = ApplicationBuilder().token(TOKEN).request(req).concurrent_updates(True).build()
+        app.add_handler(MessageHandler(filters.TEXT | filters.Document.Category("text/plain"), handle_request))
+        
+        print(f">>> 🤖 Bot 启动中... (Token: {TOKEN[:5]}...)")
+        print(">>> aiohttp 极速并发版启动...")
+        
         async with app:
             await app.initialize()
             await app.start()
             await app.updater.start_polling()
             await asyncio.Event().wait()
+            
+    except Exception as e:
+        logger.error(f"❌ 运行时错误: {e}")
+        raise
     finally:
         if shared_session:
             await shared_session.close()
